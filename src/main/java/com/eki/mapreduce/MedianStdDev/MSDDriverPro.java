@@ -19,6 +19,9 @@ import java.util.TreeMap;
  */
 public class MSDDriverPro {
 
+    //input:"1,M,181,2003"
+    //outkey:"2003:M"
+    //outvalue:"{{170,1},{165,1},...}"
     public static class MSDProMapper extends Mapper<Object, Text, Text, SortedMapWritable> {
         private Text year = new Text();
         private IntWritable height = new IntWritable();
@@ -33,6 +36,35 @@ public class MSDDriverPro {
         }
     }
 
+    //inkey:"2003:M"
+    //invalue:"{{170,1},{165,1},...}"
+    //outkey:"2003:M"
+    //outvalue:"{{170,2},{165,5},...}"
+    public static class MSDProCombiner extends Reducer<Text, SortedMapWritable, Text, SortedMapWritable> {
+        private SortedMapWritable combined = new SortedMapWritable();
+        @Override
+        protected void reduce(Text key, Iterable<SortedMapWritable> values, Context context) throws IOException, InterruptedException {
+
+            //注意每次reduce循环需要清零combined的TreeMap
+            combined.clear();
+
+            for (SortedMapWritable value : values) {
+                Set<Map.Entry<WritableComparable, Writable>> entries = value.entrySet();
+                for (Map.Entry<WritableComparable, Writable> entry : entries) {
+                    LongWritable count = (LongWritable) combined.get(entry.getKey());
+                    if (count == null) {
+                        combined.put(entry.getKey(), new LongWritable(((LongWritable)entry.getValue()).get()));
+                    } else {
+                        combined.put(entry.getKey(), new LongWritable(((LongWritable) entry.getValue()).get() + count.get()));
+                    }
+                }
+            }
+            context.write(key, combined);
+        }
+    }
+
+    //inkey:"2003:M"
+    //invalue:"{{170,2},{165,5},...}"
     public static class MSDProReducer extends Reducer<Text, SortedMapWritable, Text, MedianStdDevTuple> {
         private MedianStdDevTuple result = new MedianStdDevTuple();
         private TreeMap<Integer, Long> heightCounts = new TreeMap<Integer, Long>();
@@ -93,25 +125,6 @@ public class MSDDriverPro {
 
             result.setStdev((float) Math.sqrt(sumOfSquares / (totalCount - 1)));
             context.write(key, result);
-        }
-    }
-
-    public static class MSDProCombiner extends Reducer<Text, SortedMapWritable, Text, SortedMapWritable> {
-        private SortedMapWritable combined = new SortedMapWritable();
-        @Override
-        protected void reduce(Text key, Iterable<SortedMapWritable> values, Context context) throws IOException, InterruptedException {
-            for (SortedMapWritable value : values) {
-                Set<Map.Entry<WritableComparable, Writable>> entries = value.entrySet();
-                for (Map.Entry<WritableComparable, Writable> entry : entries) {
-                    LongWritable count = (LongWritable) combined.get(entry.getKey());
-                    if (count == null) {
-                        combined.put(entry.getKey(), new LongWritable(((LongWritable)entry.getValue()).get()));
-                    } else {
-                        combined.put(entry.getKey(), new LongWritable(((LongWritable) entry.getValue()).get() + count.get()));
-                    }
-                }
-            }
-            context.write(key, combined);
         }
     }
 
