@@ -21,7 +21,7 @@ public class MSDDriverPro {
 
     //input:"1,M,181,2003"
     //outkey:"2003:M"
-    //outvalue:"{{170,1},{165,1},...}"
+    //outvalue:"{181,1}"
     public static class MSDProMapper extends Mapper<Object, Text, Text, SortedMapWritable> {
         private Text year = new Text();
         private IntWritable height = new IntWritable();
@@ -41,21 +41,19 @@ public class MSDDriverPro {
     //outkey:"2003:M"
     //outvalue:"{{170,2},{165,5},...}"
     public static class MSDProCombiner extends Reducer<Text, SortedMapWritable, Text, SortedMapWritable> {
-        private SortedMapWritable combined = new SortedMapWritable();
         @Override
         protected void reduce(Text key, Iterable<SortedMapWritable> values, Context context) throws IOException, InterruptedException {
 
-            //注意每次reduce循环需要清零combined的TreeMap
-            combined.clear();
+            SortedMapWritable combined = new SortedMapWritable();
 
             for (SortedMapWritable value : values) {
-                Set<Map.Entry<WritableComparable, Writable>> entries = value.entrySet();
-                for (Map.Entry<WritableComparable, Writable> entry : entries) {
+                for (Map.Entry<WritableComparable, Writable> entry : value.entrySet()) {
                     LongWritable count = (LongWritable) combined.get(entry.getKey());
                     if (count == null) {
-                        combined.put(entry.getKey(), new LongWritable(((LongWritable)entry.getValue()).get()));
+                        combined.put(entry.getKey(), entry.getValue());
                     } else {
-                        combined.put(entry.getKey(), new LongWritable(((LongWritable) entry.getValue()).get() + count.get()));
+                        long newCount = ((LongWritable) entry.getValue()).get() + count.get();
+                        combined.put(entry.getKey(), new LongWritable(newCount));
                     }
                 }
             }
@@ -64,7 +62,7 @@ public class MSDDriverPro {
     }
 
     //inkey:"2003:M"
-    //invalue:"{{170,2},{165,5},...}"abc
+    //invalue:"{{170,2},{165,5},...}"
     public static class MSDProReducer extends Reducer<Text, SortedMapWritable, Text, MedianStdDevTuple> {
         private MedianStdDevTuple result = new MedianStdDevTuple();
         private TreeMap<Integer, Long> heightCounts = new TreeMap<Integer, Long>();
