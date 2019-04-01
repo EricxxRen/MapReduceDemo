@@ -11,7 +11,6 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
 import java.io.IOException;
 import java.util.Map;
-import java.util.Set;
 import java.util.TreeMap;
 
 /**
@@ -40,30 +39,31 @@ public class MSDDriverPro {
     //invalue:"{{170,1},{165,1},...}"
     //outkey:"2003:M"
     //outvalue:"{{170,2},{165,5},...}"
-    public static class MSDProCombiner extends Reducer<Text, SortedMapWritable, Text, SortedMapWritable> {
+    public static class MSDProCombiner2 extends Reducer<Text, SortedMapWritable, Text, SortedMapWritable> {
         @Override
         protected void reduce(Text key, Iterable<SortedMapWritable> values, Context context) throws IOException, InterruptedException {
 
-            SortedMapWritable combined = new SortedMapWritable();
+            SortedMapWritable outValue = new SortedMapWritable();
 
-            for (SortedMapWritable value : values) {
-                for (Map.Entry<WritableComparable, Writable> entry : value.entrySet()) {
-                    LongWritable count = (LongWritable) combined.get(entry.getKey());
-                    if (count == null) {
-                        combined.put(entry.getKey(), entry.getValue());
+            for (SortedMapWritable v : values) {
+                for (Map.Entry<WritableComparable, Writable> entry : v.entrySet()) {
+                    LongWritable count = (LongWritable) outValue.get(entry.getKey());
+
+                    if (count != null) {
+                        count.set(count.get() + ((LongWritable) entry.getValue()).get());
                     } else {
-                        long newCount = ((LongWritable) entry.getValue()).get() + count.get();
-                        combined.put(entry.getKey(), new LongWritable(newCount));
+                        outValue.put(entry.getKey(), new LongWritable(((LongWritable) entry.getValue()).get()));
                     }
                 }
             }
-            context.write(key, combined);
+
+            context.write(key, outValue);
         }
     }
 
     //inkey:"2003:M"
     //invalue:"{{170,2},{165,5},...}"
-    public static class MSDProReducer extends Reducer<Text, SortedMapWritable, Text, MedianStdDevTuple> {
+    public static class MSDProReducer2 extends Reducer<Text, SortedMapWritable, Text, MedianStdDevTuple> {
         private MedianStdDevTuple result = new MedianStdDevTuple();
         private TreeMap<Integer, Long> heightCounts = new TreeMap<Integer, Long>();
         @Override
@@ -77,8 +77,7 @@ public class MSDDriverPro {
             heightCounts.clear();
 
             for (SortedMapWritable value : values) {
-                Set<Map.Entry<WritableComparable, Writable>> entrySet = value.entrySet();
-                for (Map.Entry<WritableComparable, Writable> entry : entrySet) {
+                for (Map.Entry<WritableComparable, Writable> entry : value.entrySet()) {
                     int height = ((IntWritable) entry.getKey()).get();
                     long count = ((LongWritable) entry.getValue()).get();
 
@@ -126,6 +125,36 @@ public class MSDDriverPro {
         }
     }
 
+    public static class MSDProCombiner extends Reducer<Text, SortedMapWritable, Text, Text> {
+
+        Text outValue = new Text();
+        StringBuilder sb = new StringBuilder();
+        @Override
+        protected void reduce(Text key, Iterable<SortedMapWritable> values, Context context) throws IOException, InterruptedException {
+            for (SortedMapWritable v : values) {
+                sb.append(v.size() + " ");
+            }
+            outValue.set(sb.toString());
+            context.write(key, outValue);
+        }
+    }
+
+    public static class MSDProReducer extends Reducer<Text, SortedMapWritable, Text, Text> {
+
+        Text outValue = new Text();
+        StringBuilder sb = new StringBuilder();
+        @Override
+        protected void reduce(Text key, Iterable<SortedMapWritable> values, Context context) throws IOException, InterruptedException {
+            for (SortedMapWritable v : values) {
+                for (Map.Entry<WritableComparable, Writable> entry : v.entrySet()) {
+                    sb.append(entry.getValue() + " ");
+                }
+            }
+            outValue.set(sb.toString());
+            context.write(key, outValue);
+        }
+    }
+
     public static void main(String[] args) throws IOException, ClassNotFoundException, InterruptedException {
         if(args.length != 2) {
             System.err.println("Not enough Arguments");
@@ -140,7 +169,7 @@ public class MSDDriverPro {
         job.setJarByClass(MSDDriverPro.class);
 
         job.setMapperClass(MSDProMapper.class);
-        job.setCombinerClass(MSDProCombiner.class);
+//        job.setCombinerClass(MSDProCombiner.class);
         job.setReducerClass(MSDProReducer.class);
 
         job.setMapOutputValueClass(Text.class);
