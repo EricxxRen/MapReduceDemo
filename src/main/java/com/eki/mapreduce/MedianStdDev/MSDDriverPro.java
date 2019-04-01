@@ -64,7 +64,7 @@ public class MSDDriverPro {
     }
 
     //inkey:"2003:M"
-    //invalue:"{{170,2},{165,5},...}"
+    //invalue:"{{170,2},{165,5},...}"abc
     public static class MSDProReducer extends Reducer<Text, SortedMapWritable, Text, MedianStdDevTuple> {
         private MedianStdDevTuple result = new MedianStdDevTuple();
         private TreeMap<Integer, Long> heightCounts = new TreeMap<Integer, Long>();
