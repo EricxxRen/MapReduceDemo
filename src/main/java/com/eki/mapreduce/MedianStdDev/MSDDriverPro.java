@@ -39,7 +39,8 @@ public class MSDDriverPro {
     //invalue:"{{170,1},{165,1},...}"
     //outkey:"2003:M"
     //outvalue:"{{170,2},{165,5},...}"
-    public static class MSDProCombiner2 extends Reducer<Text, SortedMapWritable, Text, SortedMapWritable> {
+    public static class MSDProCombiner extends Reducer<Text, SortedMapWritable, Text, SortedMapWritable> {
+
         @Override
         protected void reduce(Text key, Iterable<SortedMapWritable> values, Context context) throws IOException, InterruptedException {
 
@@ -47,6 +48,7 @@ public class MSDDriverPro {
 
             for (SortedMapWritable v : values) {
                 for (Map.Entry<WritableComparable, Writable> entry : v.entrySet()) {
+                    //这里是给outvalue的value值一个名字,修改count,即count.set()会直接修改outvalue里的value
                     LongWritable count = (LongWritable) outValue.get(entry.getKey());
 
                     if (count != null) {
@@ -63,9 +65,10 @@ public class MSDDriverPro {
 
     //inkey:"2003:M"
     //invalue:"{{170,2},{165,5},...}"
-    public static class MSDProReducer2 extends Reducer<Text, SortedMapWritable, Text, MedianStdDevTuple> {
+    public static class MSDProReducer extends Reducer<Text, SortedMapWritable, Text, MedianStdDevTuple> {
         private MedianStdDevTuple result = new MedianStdDevTuple();
         private TreeMap<Integer, Long> heightCounts = new TreeMap<Integer, Long>();
+
         @Override
         protected void reduce(Text key, Iterable<SortedMapWritable> values, Context context) throws IOException, InterruptedException {
             float sum = 0;
@@ -125,7 +128,7 @@ public class MSDDriverPro {
         }
     }
 
-    public static class MSDProCombiner extends Reducer<Text, SortedMapWritable, Text, Text> {
+    public static class MSDProCombiner2 extends Reducer<Text, SortedMapWritable, Text, Text> {
 
         Text outValue = new Text();
         StringBuilder sb = new StringBuilder();
@@ -139,7 +142,7 @@ public class MSDDriverPro {
         }
     }
 
-    public static class MSDProReducer extends Reducer<Text, SortedMapWritable, Text, Text> {
+    public static class MSDProReducer2 extends Reducer<Text, SortedMapWritable, Text, Text> {
 
         Text outValue = new Text();
         StringBuilder sb = new StringBuilder();
@@ -169,7 +172,7 @@ public class MSDDriverPro {
         job.setJarByClass(MSDDriverPro.class);
 
         job.setMapperClass(MSDProMapper.class);
-//        job.setCombinerClass(MSDProCombiner.class);
+        job.setCombinerClass(MSDProCombiner.class);
         job.setReducerClass(MSDProReducer.class);
 
         job.setMapOutputValueClass(Text.class);
