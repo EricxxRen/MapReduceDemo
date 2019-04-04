@@ -15,6 +15,10 @@ import java.util.TreeMap;
 
 /**
  * "MapReduce设计模式" 26页
+ * 有点问题,mapper完成后到combiner的时候,iterable里的SortedMapWritable应该只有1个值
+ * 但实际情况是SortedMapWritable进行了累加,越来越多
+ * 还不知道是什么情况
+ * 写的是和书里的相同
  */
 public class MSDDriverPro {
 
