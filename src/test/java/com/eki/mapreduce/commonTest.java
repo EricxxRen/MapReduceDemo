@@ -50,4 +50,15 @@ public class commonTest {
             System.out.println(entry.getKey() + ": " + entry.getValue());
         }
     }
+
+    @Test
+    public void testRegex () {
+        String txt = "1,M,181,2003";
+        String regex = "\\d+,[M,F],1[4-9]\\d,200[0-3]";
+        System.out.println(txt);
+        System.out.println(regex);
+        if (txt.matches(regex)) {
+            System.out.println(txt);
+        }
+    }
 }
