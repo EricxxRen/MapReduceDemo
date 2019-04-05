@@ -20,7 +20,7 @@ import java.util.zip.GZIPInputStream;
  * 是一个通用的应用程序
  * 使用预先确定的词集产生Bloom filter
  */
-public class BoomFilterTrainer {
+public class BloomFilterTrainer {
 
     public static void main(String[] args) throws IOException {
 
