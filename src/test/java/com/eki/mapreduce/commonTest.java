@@ -1,9 +1,6 @@
 package com.eki.mapreduce;
 
-import org.apache.hadoop.io.IntWritable;
-import org.apache.hadoop.io.SortedMapWritable;
-import org.apache.hadoop.io.Writable;
-import org.apache.hadoop.io.WritableComparable;
+import org.apache.hadoop.io.*;
 import org.junit.Test;
 
 import java.util.*;
@@ -60,5 +57,26 @@ public class commonTest {
         if (txt.matches(regex)) {
             System.out.println(txt);
         }
+    }
+
+    @Test
+    public void testString () {
+        String txt = "2019/4/5,,mapreduce设计模式:BloomFilter,,N";
+        String[] tokens = txt.split(",");
+        System.out.println(tokens.length);
+        for (String token : tokens) {
+            if (token == null || token.length() == 0)
+                System.out.println("it is blank");
+            else
+                System.out.println(token);
+        }
+    }
+
+    @Test
+    public void testSoredMapWritable () {
+        SortedMapWritable test = new SortedMapWritable();
+        test.put(new IntWritable(5), new Text("abc"));
+        test.put(new IntWritable(2), new Text("efg"));
+        System.out.println(test.lastKey());
     }
 }
